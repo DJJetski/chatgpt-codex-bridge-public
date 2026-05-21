@@ -42,14 +42,14 @@ jobs:
           tmpdir="$(mktemp -d)"
           python -m pip wheel . -w "$tmpdir" --no-deps
           python -m venv "$tmpdir/venv"
-          "$tmpdir/venv/bin/python" -m pip install "$tmpdir"/*.whl
-          "$tmpdir/venv/bin/codex-bridge" --help >/dev/null
-          "$tmpdir/venv/bin/bridgectl" --help >/dev/null
-          BRIDGE_HOME="$tmpdir/bridge-home" "$tmpdir/venv/bin/codex-bridge" self-test --json
-          BRIDGE_HOME="$tmpdir/bridge-home" CODEX_HOME="$tmpdir/codex-home" "$tmpdir/venv/bin/codex-bridge" install --json
-          BRIDGE_HOME="$tmpdir/bridge-home" CODEX_HOME="$tmpdir/codex-home" "$tmpdir/venv/bin/codex-bridge" doctor --json
-          BRIDGE_HOME="$tmpdir/bridge-home" CODEX_HOME="$tmpdir/codex-home" "$tmpdir/venv/bin/codex-bridge" snapshot --json
-          BRIDGE_HOME="$tmpdir/bridge-home" "$tmpdir/venv/bin/codex-bridge" uninstall --json
+          env -u PYTHONPATH "$tmpdir/venv/bin/python" -m pip install --force-reinstall "$tmpdir"/*.whl
+          env -u PYTHONPATH "$tmpdir/venv/bin/codex-bridge" --help >/dev/null
+          env -u PYTHONPATH "$tmpdir/venv/bin/bridgectl" --help >/dev/null
+          env -u PYTHONPATH BRIDGE_HOME="$tmpdir/bridge-home" "$tmpdir/venv/bin/codex-bridge" self-test --json
+          env -u PYTHONPATH BRIDGE_HOME="$tmpdir/bridge-home" CODEX_HOME="$tmpdir/codex-home" "$tmpdir/venv/bin/codex-bridge" install --json
+          env -u PYTHONPATH BRIDGE_HOME="$tmpdir/bridge-home" CODEX_HOME="$tmpdir/codex-home" "$tmpdir/venv/bin/codex-bridge" doctor --json
+          env -u PYTHONPATH BRIDGE_HOME="$tmpdir/bridge-home" CODEX_HOME="$tmpdir/codex-home" "$tmpdir/venv/bin/codex-bridge" snapshot --json
+          env -u PYTHONPATH BRIDGE_HOME="$tmpdir/bridge-home" "$tmpdir/venv/bin/codex-bridge" uninstall --json
       - name: Installer script dry-run smoke
         run: ./scripts/install.sh --dry-run --json
       - name: Installer script real fallback smoke
