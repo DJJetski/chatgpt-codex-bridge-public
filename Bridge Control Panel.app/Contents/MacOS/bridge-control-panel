@@ -1,0 +1,56 @@
+#!/bin/zsh
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_root="$(cd "$script_dir/../../.." && pwd)"
+log_path="$repo_root/state/desktop-launcher.log"
+
+mkdir -p "$repo_root/state"
+
+show_error() {
+  local message="$1"
+  local safe_message
+  safe_message="$(printf '%s' "$message" | tr '\n' ' ' | sed 's/\\/\\\\/g; s/"/\\"/g')"
+  /usr/bin/osascript <<APPLESCRIPT
+display alert "Bridge Control Panel konnte nicht starten" message "$safe_message" as critical
+APPLESCRIPT
+}
+
+resolve_python() {
+  local candidate=""
+  if [[ -n "${PYTHON_BIN:-}" && -x "${PYTHON_BIN:-}" ]]; then
+    printf '%s\n' "$PYTHON_BIN"
+    return 0
+  fi
+  for candidate in \
+    "/opt/homebrew/bin/python3" \
+    "/usr/local/bin/python3" \
+    "$(command -v python3 2>/dev/null || true)"; do
+    if [[ -n "$candidate" && -x "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [[ ! -d "$repo_root/src/chatgpt_codex_bridge" ]]; then
+  show_error "Repo root konnte relativ zur App nicht gefunden werden: $repo_root"
+  exit 1
+fi
+
+python_bin="$(resolve_python || true)"
+if [[ -z "$python_bin" ]]; then
+  show_error "python3 wurde nicht gefunden. Setze optional PYTHON_BIN oder installiere python3."
+  exit 1
+fi
+
+cd "$repo_root"
+export PYTHONPATH="$repo_root/src${PYTHONPATH:+:$PYTHONPATH}"
+export BRIDGE_HOME="${BRIDGE_HOME:-$repo_root}"
+export BRIDGE_PROFILE="${BRIDGE_PROFILE:-browser-extra}"
+
+if ! "$python_bin" -m chatgpt_codex_bridge.desktop_launcher --detach >>"$log_path" 2>&1; then
+  show_error "Der Launcher konnte nicht gestartet werden. Details stehen in $log_path"
+  exit 1
+fi

@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chatgpt-codex-bridge"
+version = "0.1.0"
+description = "Local-first bridge between ChatGPT mastermind workflows and Codex execution threads."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "ChatGPT Codex Bridge maintainers" }]
+keywords = ["codex", "chatgpt", "automation", "supervisor", "local-first"]
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development :: Build Tools",
+]
+
+[project.optional-dependencies]
+browser = ["playwright>=1.48"]
+macos = []
+dev = ["build>=1.2"]
+
+[project.scripts]
+codex-bridge = "chatgpt_codex_bridge.cli:main"
+bridgectl = "chatgpt_codex_bridge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["chatgpt_codex_bridge*", "mastermind_bridge"]
+
+[tool.setuptools.package-data]
+chatgpt_codex_bridge = [
+  "prompts/*.md",
+  "resources/skills/chatgpt-codex-bridge/SKILL.md",
+  "resources/skills/chatgpt-codex-bridge/agents/*.yaml",
+]

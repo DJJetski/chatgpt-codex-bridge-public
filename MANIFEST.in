@@ -1,0 +1,10 @@
+prune docs/private
+prune state
+prune artifacts
+prune config
+prune logs
+prune session_logs
+prune .coa
+prune .dual-graph
+prune .dual-graph-context
+global-exclude .DS_Store *.pyc *.pyo *.log *.sqlite *.sqlite3 *.db *.pem *.key *.token *.secret

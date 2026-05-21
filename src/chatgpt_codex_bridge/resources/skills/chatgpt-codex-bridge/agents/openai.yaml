@@ -1,0 +1,5 @@
+version: 1
+instructions:
+  - Use `codex-bridge doctor` and `codex-bridge self-test` before claiming an installation is healthy.
+  - Keep `BRIDGE_HOME` runtime files private and out of public repository history.
+  - Prefer Supervisor V2 commands for normal operation.

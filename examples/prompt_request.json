@@ -1,0 +1,21 @@
+{
+  "mode": "codex_continue_thread",
+  "project_name": "example-project",
+  "thread_id": "thread-current",
+  "goal_family": "bridge-demo",
+  "work_unit": "cli",
+  "repo_path": "/tmp/example-project",
+  "worktree_path": "/tmp/example-project",
+  "branch": "main",
+  "thread_action": "same_thread",
+  "objective": "Demonstrate prompt rendering from a sanitized fixture.",
+  "task": "Inspect the current CLI surface and make one small verified change.",
+  "decision_summary": "The same thread is still valid for this example.",
+  "delta_summary": "No private machine paths or chat URLs are required.",
+  "read_order": ["README.md", "docs/DEVELOPMENT.md"],
+  "durable_state": [],
+  "constraints": ["Keep runtime state outside the source checkout."],
+  "acceptance_criteria": ["The relevant focused tests pass."],
+  "recent_results": ["The project imports successfully."],
+  "required_output": ["Summary", "Verification evidence"]
+}
