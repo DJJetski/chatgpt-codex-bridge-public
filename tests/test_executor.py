@@ -974,10 +974,12 @@ class ExecuteCodexReportParsingTests(unittest.TestCase):
     @patch("mastermind_bridge.executor.subprocess.run")
     @patch("mastermind_bridge.executor._is_git_repo", return_value=False)
     @patch("mastermind_bridge.executor._can_execute_native_turn_start", return_value=True)
+    @patch("mastermind_bridge.executor._resolve_codex_app_server_bin", return_value="/Applications/Codex.app/Contents/Resources/codex")
     @patch("mastermind_bridge.executor._run_codex_native_turn_with_polling")
     def test_execute_codex_prompt_prefers_native_turn_start_when_available(
         self,
         native_turn_mock,
+        _resolve_bin_mock,
         _can_native_mock,
         _is_git_repo_mock,
         subprocess_run_mock,
@@ -1465,6 +1467,7 @@ class ExecuteCodexReportParsingTests(unittest.TestCase):
         register_mock.assert_not_called()
 
     @patch.dict(os.environ, {"BRIDGE_ENABLE_CODEX_APP_INTEGRATION": "1"}, clear=False)
+    @patch("mastermind_bridge.executor._can_use_native_codex_app_server", return_value=True)
     @patch("mastermind_bridge.executor.register_codex_app_thread_best_effort")
     @patch("mastermind_bridge.executor._stop_codex_thread_open_watcher")
     @patch("mastermind_bridge.executor._start_codex_thread_open_watcher", return_value=None)
@@ -1475,6 +1478,7 @@ class ExecuteCodexReportParsingTests(unittest.TestCase):
         _start_watcher_mock,
         _stop_watcher_mock,
         register_mock,
+        _can_native_app_mock,
     ):
         run_mock.return_value = subprocess.CompletedProcess(
             args=["codex", "exec"],
@@ -1692,6 +1696,7 @@ class ExecuteCodexReportParsingTests(unittest.TestCase):
         },
         clear=False,
     )
+    @patch("mastermind_bridge.executor._can_use_native_codex_app_server", return_value=True)
     @patch("mastermind_bridge.executor.register_codex_app_thread_best_effort")
     @patch("mastermind_bridge.executor._stop_codex_thread_open_watcher")
     @patch("mastermind_bridge.executor._start_codex_thread_open_watcher", return_value=None)
@@ -1702,6 +1707,7 @@ class ExecuteCodexReportParsingTests(unittest.TestCase):
         _start_watcher_mock,
         _stop_watcher_mock,
         register_mock,
+        _can_native_app_mock,
     ):
         run_mock.return_value = subprocess.CompletedProcess(
             args=["codex", "exec"],
