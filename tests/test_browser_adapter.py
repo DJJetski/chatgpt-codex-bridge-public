@@ -1,6 +1,8 @@
 import json
 import subprocess
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from mastermind_bridge.orchestrator.browser import (
@@ -16,6 +18,10 @@ from mastermind_bridge.orchestrator.browser import (
 )
 from mastermind_bridge.orchestrator.browser_support import canonical_delivery_error_signature
 from mastermind_bridge.orchestrator.browser_support import assistant_message_looks_like_retryable_error
+
+
+def _applescript_adapter_module():
+    return sys.modules[AppleScriptChromeChatAdapter.__module__]
 
 
 class _FakeNode:
@@ -1049,10 +1055,15 @@ class BrowserAdapterTests(unittest.TestCase):
         )()
         adapter = AppleScriptChromeChatAdapter()
         open_by_name_error = subprocess.CalledProcessError(1, ["open", "-a", "Google Chrome"])
+        applescript_module = _applescript_adapter_module()
 
         with patch(
             "mastermind_bridge.orchestrator.browser.AppleScriptChromeChatAdapter._focus_existing_chat_tab",
             return_value=False,
+        ), patch.object(
+            applescript_module,
+            "_macos_browser_app_path",
+            return_value=Path("/Applications/Google Chrome.app"),
         ), patch(
             "mastermind_bridge.orchestrator.browser_applescript.subprocess.run",
             side_effect=[open_by_name_error, None],
@@ -1089,10 +1100,19 @@ class BrowserAdapterTests(unittest.TestCase):
         adapter = AppleScriptChromeChatAdapter()
         open_by_name_error = subprocess.CalledProcessError(1, ["open", "-a", "Google Chrome"])
         open_by_path_error = subprocess.CalledProcessError(1, ["open", "-a", "/Applications/Google Chrome.app"])
+        applescript_module = _applescript_adapter_module()
 
         with patch(
             "mastermind_bridge.orchestrator.browser.AppleScriptChromeChatAdapter._focus_existing_chat_tab",
             return_value=False,
+        ), patch.object(
+            applescript_module,
+            "_macos_browser_app_path",
+            return_value=Path("/Applications/Google Chrome.app"),
+        ), patch.object(
+            applescript_module,
+            "_macos_browser_binary_path",
+            return_value=Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
         ), patch(
             "mastermind_bridge.orchestrator.browser_applescript.subprocess.run",
             side_effect=[open_by_name_error, open_by_path_error],

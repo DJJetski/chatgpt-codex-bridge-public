@@ -127,12 +127,12 @@ def _snapshot_workspace_files(
         if _path_uses_ignored_root(root_path, ignored_prefixes):
             dirnames[:] = []
             continue
-        dirnames[:] = [
+        dirnames[:] = sorted(
             name
             for name in dirnames
             if not _should_ignore_workspace_directory(root_path / name, ignored_prefixes)
-        ]
-        for filename in filenames:
+        )
+        for filename in sorted(filenames):
             if deadline is not None and time.monotonic() >= deadline:
                 return snapshots
             path = root_path / filename
