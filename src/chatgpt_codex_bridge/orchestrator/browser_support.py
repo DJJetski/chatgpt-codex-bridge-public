@@ -255,7 +255,8 @@ def _applescript_js_expression(text: str) -> str:
     def flush_chunk() -> None:
         if chunk:
             # AppleScript string literals need literal backslashes doubled.
-            tokens.append(f'"{"".join(chunk).replace("\\", "\\\\")}"')
+            escaped = "".join(chunk).replace("\\", "\\\\")
+            tokens.append(f'"{escaped}"')
             chunk.clear()
 
     for character in normalized:

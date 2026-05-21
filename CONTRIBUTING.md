@@ -21,7 +21,7 @@ improvements are welcome.
 Read [docs/README.md](docs/README.md) for the public/private documentation map.
 
 ```bash
-python3 -m pip install -e '.[browser]'
+python3 -m pip install -e '.[browser,dev]'
 codex-bridge self-test
 ```
 
