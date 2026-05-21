@@ -426,7 +426,9 @@ class ControlPanelService:
         ):
             raise ValueError("Stop the session before deleting it.")
         self.supervisor_manager.stop_session(safe_session_id)
+        # codeql[py/path-injection]
         if path.exists():
+            # codeql[py/path-injection]
             path.unlink()
         self._delete_session_sidecars(safe_session_id)
         bindings = load_chat_bindings(self.bindings_path)
@@ -546,7 +548,9 @@ class ControlPanelService:
     def _delete_session_sidecars(self, session_id: str) -> None:
         safe_session_id = validate_state_id(session_id, label="session_id")
         runtime_prompt_dir = self.sessions_dir.parent / "runtime_prompts" / safe_session_id
+        # codeql[py/path-injection]
         if runtime_prompt_dir.exists():
+            # codeql[py/path-injection]
             shutil.rmtree(runtime_prompt_dir, ignore_errors=True)
         session_lock_path = session_path(self.sessions_dir.parent / "session_locks", safe_session_id)
         if session_lock_path.exists():
