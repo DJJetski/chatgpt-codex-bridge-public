@@ -14,10 +14,21 @@ from mastermind_bridge.orchestrator.state import (
     read_orchestrator_policy,
     save_chat_bindings,
     save_session,
+    session_path,
 )
 
 
 class OrchestratorStateTests(unittest.TestCase):
+    def test_session_path_rejects_path_traversal_ids(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            sessions_dir = Path(tmp_dir) / "sessions"
+
+            with self.assertRaisesRegex(ValueError, "path separators"):
+                session_path(sessions_dir, "../outside")
+
+            with self.assertRaisesRegex(ValueError, "path separators"):
+                session_path(sessions_dir, "nested/session")
+
     def test_chat_bindings_round_trip_through_state_file(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)

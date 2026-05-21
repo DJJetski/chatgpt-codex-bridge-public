@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import copy
 import json
+import os
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -73,6 +75,7 @@ DEFAULT_ORCHESTRATOR_POLICY: dict[str, Any] = {
 
 _SESSION_LOAD_RETRIES = 5
 _SESSION_LOAD_RETRY_DELAY_SECONDS = 0.02
+_SAFE_STATE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 
 def load_chat_bindings(path: Path) -> list[ChatBinding]:
@@ -127,8 +130,27 @@ def save_orchestrator_policy(path: Path, payload: dict[str, Any]) -> None:
     _save_json(path, merged)
 
 
+def validate_state_id(value: str, *, label: str = "id") -> str:
+    normalized = str(value or "").strip()
+    if not normalized:
+        raise ValueError(f"Invalid {label}: value must not be empty.")
+    if os.path.isabs(normalized) or os.path.basename(normalized) != normalized or "\\" in normalized:
+        raise ValueError(f"Invalid {label}: path separators are not allowed.")
+    if not _SAFE_STATE_ID_RE.fullmatch(normalized):
+        raise ValueError(f"Invalid {label}: use only letters, numbers, '.', '_', '-', or ':'.")
+    return normalized
+
+
 def session_path(sessions_dir: Path, session_id: str) -> Path:
-    return sessions_dir / f"{session_id}.json"
+    safe_session_id = validate_state_id(session_id, label="session_id")
+    return sessions_dir / os.path.basename(f"{safe_session_id}.json")
+
+
+def _validated_json_state_path(path: Path) -> Path:
+    candidate = Path(path)
+    if os.path.basename(candidate.name) != candidate.name or candidate.suffix != ".json":
+        raise ValueError(f"Invalid state file path: {path}")
+    return candidate
 
 
 def _migrate_orchestrator_policy_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -142,6 +164,7 @@ def _migrate_orchestrator_policy_payload(payload: dict[str, Any]) -> dict[str, A
 
 
 def load_session(path: Path) -> OrchestratorSession:
+    path = _validated_json_state_path(path)
     last_error: json.JSONDecodeError | None = None
     for attempt in range(_SESSION_LOAD_RETRIES):
         try:
@@ -332,6 +355,7 @@ def _load_or_initialize(
     *,
     persist_default: bool = True,
 ) -> dict[str, Any]:
+    path = _validated_json_state_path(path)
     if path.exists():
         return json.loads(path.read_text())
     payload = copy.deepcopy(default_payload)
@@ -341,6 +365,7 @@ def _load_or_initialize(
 
 
 def _save_json(path: Path, payload: dict[str, Any]) -> None:
+    path = _validated_json_state_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.parent / f".{path.name}.{time.time_ns()}.tmp"
     temp_path.write_text(json.dumps(payload, indent=2) + "\n")

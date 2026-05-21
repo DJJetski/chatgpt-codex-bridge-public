@@ -575,6 +575,30 @@ class ControlPanelServiceTests(unittest.TestCase):
             self.assertEqual(manager.stopped, ["session-old"])
             self.assertEqual(load_chat_bindings(bindings_path)[0].last_session_id, "")
 
+    def test_delete_session_rejects_path_traversal_session_id(self):
+        from mastermind_bridge.orchestrator.control_panel import ControlPanelService
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            bindings_path = root / "CHAT_BINDINGS.json"
+            policy_path = root / "ORCHESTRATOR_POLICY.json"
+            sessions_dir = root / "sessions"
+            bindings_path.write_text(json.dumps({"version": 1, "bindings": []}))
+            policy_path.write_text(json.dumps({"version": 1}))
+            sessions_dir.mkdir(parents=True)
+            manager = _FakeSupervisorManager()
+            service = ControlPanelService(
+                bindings_path=bindings_path,
+                policy_path=policy_path,
+                sessions_dir=sessions_dir,
+                supervisor_manager=manager,
+            )
+
+            with self.assertRaisesRegex(ValueError, "path separators"):
+                service.delete_session("../session-old")
+
+            self.assertEqual(manager.stopped, [])
+
     def test_delete_session_rejects_running_session(self):
         from mastermind_bridge.orchestrator.control_panel import ControlPanelService
         from mastermind_bridge.orchestrator.state import session_path

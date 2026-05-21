@@ -46,6 +46,7 @@ from .state import (
     save_session,
     session_path,
     upsert_chat_binding,
+    validate_state_id,
 )
 from .supervisor import terminate_locked_session_supervisor
 
@@ -413,9 +414,10 @@ class ControlPanelService:
         return session
 
     def delete_session(self, session_id: str) -> dict[str, str]:
-        self._close_preview_adapter(session_id)
-        self._cancel_terminal_watcher(session_id)
-        path = session_path(self.sessions_dir, session_id)
+        safe_session_id = validate_state_id(session_id, label="session_id")
+        self._close_preview_adapter(safe_session_id)
+        self._cancel_terminal_watcher(safe_session_id)
+        path = session_path(self.sessions_dir, safe_session_id)
         session = load_session(path)
         if _session_is_running_state(
             status=session.status,
@@ -423,19 +425,19 @@ class ControlPanelService:
             auto_run_enabled=session.auto_run_enabled,
         ):
             raise ValueError("Stop the session before deleting it.")
-        self.supervisor_manager.stop_session(session_id)
+        self.supervisor_manager.stop_session(safe_session_id)
         if path.exists():
             path.unlink()
-        self._delete_session_sidecars(session_id)
+        self._delete_session_sidecars(safe_session_id)
         bindings = load_chat_bindings(self.bindings_path)
         updated = False
         for binding in bindings:
-            if binding.last_session_id == session_id:
+            if binding.last_session_id == safe_session_id:
                 binding.last_session_id = ""
                 updated = True
         if updated:
             save_chat_bindings(self.bindings_path, bindings)
-        return {"session_id": session_id, "status": "deleted"}
+        return {"session_id": safe_session_id, "status": "deleted"}
 
     def open_chat_preview(self, session_id: str) -> dict[str, str]:
         self._close_preview_adapter(session_id)
@@ -542,10 +544,11 @@ class ControlPanelService:
         save_session(session_path(self.sessions_dir, session.session_id), session)
 
     def _delete_session_sidecars(self, session_id: str) -> None:
-        runtime_prompt_dir = self.sessions_dir.parent / "runtime_prompts" / session_id
+        safe_session_id = validate_state_id(session_id, label="session_id")
+        runtime_prompt_dir = self.sessions_dir.parent / "runtime_prompts" / safe_session_id
         if runtime_prompt_dir.exists():
             shutil.rmtree(runtime_prompt_dir, ignore_errors=True)
-        session_lock_path = self.sessions_dir.parent / "session_locks" / f"{session_id}.json"
+        session_lock_path = session_path(self.sessions_dir.parent / "session_locks", safe_session_id)
         if session_lock_path.exists():
             try:
                 session_lock_path.unlink()
@@ -1080,10 +1083,14 @@ def _session_health_summary(
     }
 
 def _latest_run_metadata(artifacts_root: Path, session_id: str) -> dict[str, str] | None:
+    safe_session_id = validate_state_id(session_id, label="session_id")
     runs_root = artifacts_root
     if not runs_root.exists():
         return None
-    candidates = sorted(runs_root.glob(f"*-{session_id}"), reverse=True)
+    candidates = sorted(
+        (path for path in runs_root.iterdir() if path.is_dir() and path.name.endswith(f"-{safe_session_id}")),
+        reverse=True,
+    )
     if not candidates:
         return None
     run_dir = candidates[0]
