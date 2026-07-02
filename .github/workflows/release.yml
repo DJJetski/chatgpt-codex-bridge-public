@@ -64,7 +64,7 @@ jobs:
       - name: Write checksums
         run: (cd dist && shasum -a 256 -c SHA256SUMS)
       - name: Attest release artifacts
-        uses: actions/attest-build-provenance@db473fddc028af60658334401dc6fa3ffd8669fd
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373
         with:
           subject-path: "dist/*"
       - name: Publish GitHub release
